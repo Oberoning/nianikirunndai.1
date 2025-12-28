@@ -173,6 +173,7 @@
         .analysis-box { background: #333; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 5px solid #555; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .analysis-box.good { border-left-color: var(--safe); }
         .analysis-box.bad { border-left-color: var(--danger); }
+        .analysis-box.push { border-left-color: var(--push); }
         
         .box-title { font-size: 0.7rem; color: #a0a0a0; margin-bottom: 6px; display: flex; justify-content: space-between; font-weight: 700; letter-spacing: 0.05em; }
         .box-main { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 1.2rem; }
@@ -180,6 +181,7 @@
         .res-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; margin-bottom: 8px; letter-spacing: 0.05em; }
         .res-badge.correct { background: var(--safe); color: #fff; box-shadow: 0 2px 8px rgba(48, 209, 88, 0.4); }
         .res-badge.wrong { background: var(--danger); color: #fff; box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4); }
+        .res-badge.push { background: var(--push); color: #fff; }
 
         .res-title { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 12px; line-height: 1.2; }
         .res-detail { font-size: 0.9rem; line-height: 1.6; color: #dcdcdc; }
@@ -280,7 +282,13 @@
             </div>
 
             <div id="river-wrapper" class="river-wrapper">
-                <div class="area-label" id="river-label">OPPONENT'S RIVER / 対面の河</div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div class="area-label" id="river-label">OPPONENT'S RIVER / 対面の河</div>
+                    <div style="font-size:0.6rem; color:#888; margin-bottom:6px; display:flex; gap:8px;">
+                        <span style="display:flex; align-items:center;"><span style="width:8px; height:10px; background:#fff; margin-right:3px; border-radius:1px;"></span>手出し</span>
+                        <span style="display:flex; align-items:center;"><span style="width:8px; height:10px; background:#999; margin-right:3px; border-radius:1px;"></span>ツモ切り</span>
+                    </div>
+                </div>
                 <div class="river-container">
                     <div id="riichi-stick-container"></div>
                     <div id="river-tiles" class="river-tiles"></div>
