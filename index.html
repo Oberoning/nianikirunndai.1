@@ -102,6 +102,7 @@
             background: var(--text-gold); border-radius: 50%;
         }
 
+        /* --- 情報エリア --- */
         .info-wrapper {
             width: 90%; max-width: 420px; margin: 0 auto 20px; z-index: 1;
         }
@@ -124,16 +125,20 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
+        /* --- 河エリア --- */
         .river-wrapper {
             width: 100%; max-width: 420px; margin: 0 auto 30px; padding: 0 10px;
             flex-shrink: 0; position: relative; z-index: 1;
+            /* 初期状態は非表示（JSで制御） */
+            display: none; 
         }
         .river-container {
             background: var(--glass-bg);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
-            padding: 45px 12px 16px 12px; 
+            /* リーチ棒用に上部余白確保 */
+            padding: 40px 12px 16px 12px; 
             min-height: 160px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             position: relative;
@@ -163,7 +168,7 @@
             box-shadow: 0 0 12px rgba(255, 69, 58, 0.8); 
             border-radius: 3px; 
             position: absolute; 
-            top: 16px; 
+            top: 15px; /* 枠内上部 */
             left: 50%; transform: translateX(-50%);
             animation: pulse 1.5s infinite ease-in-out; 
             z-index: 5;
@@ -174,6 +179,7 @@
             box-shadow: 0 0 5px #ff453a;
         }
 
+        /* --- 手牌エリア --- */
         .hand-wrapper {
             width: 100%; padding: 0 10px; z-index: 1;
         }
@@ -261,6 +267,7 @@
         }
         .next-btn:active { transform: scale(0.97); }
 
+        /* ホーム */
         #screen-home { justify-content: center; align-items: center; padding: 20px; text-align: center; }
         .title-logo { font-size: 3rem; font-weight: 900; color: var(--text-gold); margin-bottom: 20px; text-shadow: 0 0 30px rgba(212, 175, 55, 0.5); line-height: 1.1; letter-spacing: -0.02em; }
         .best-streak-box { 
@@ -278,6 +285,7 @@
         }
         .menu-btn:active { transform: scale(0.96); }
         
+        /* 復習 */
         #screen-review { background: #000; overflow-y: auto; padding: 20px 10px; padding-bottom: max(30px, env(safe-area-inset-bottom)); }
         .review-item { background: #1c1c1e; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #333; }
         .review-hand { display: flex; flex-wrap: nowrap; gap: 2px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #333; }
@@ -331,8 +339,8 @@
                 </div>
             </div>
 
-            <div class="river-wrapper">
-                <div class="area-label">RIVER / 河</div>
+            <div id="river-wrapper" class="river-wrapper">
+                <div class="area-label" id="river-label">OPPONENT'S RIVER / 対面の河</div>
                 <div class="river-container">
                     <div id="riichi-stick-container"></div>
                     <div id="river-tiles" class="river-tiles"></div>
@@ -386,7 +394,7 @@
         localStorage.setItem('mahjong_history', JSON.stringify(historyData));
     }
 
-    // --- ロジック: 完成面子数カウント (修正版) ---
+    // --- ロジック: 完成面子数カウント ---
     function countMentsu(hand) {
         let tiles = [...hand];
         const order = {'man':0,'pin':1,'sou':2,'ji':3};
@@ -398,7 +406,7 @@
         let count = 0;
         let used = new Array(tiles.length).fill(false);
 
-        // 1. 刻子優先でカウント
+        // 1. 刻子
         for(let i=0; i<tiles.length-2; i++) {
             if(used[i]) continue;
             if(tiles[i] === tiles[i+1] && tiles[i] === tiles[i+2]) {
@@ -415,12 +423,10 @@
             let t2 = (getNum(t1)+1) + getType(t1).charAt(0);
             let t3 = (getNum(t1)+2) + getType(t1).charAt(0);
 
-            // t2を探す
             let idx2 = -1;
             for(let j=i+1; j<tiles.length; j++) {
                 if(!used[j] && tiles[j] === t2) { idx2 = j; break; }
             }
-            // t3を探す
             let idx3 = -1;
             for(let k=i+1; k<tiles.length; k++) {
                 if(!used[k] && tiles[k] === t3) { 
@@ -438,7 +444,7 @@
         return count;
     }
 
-    // --- 評価関数 (修正版) ---
+    // --- 評価関数 ---
     function evaluateHand(scenario, discard) {
         const hand = [...scenario.hand, scenario.tsumo];
         const remaining = hand.filter((_,i)=>i!==hand.indexOf(discard)); 
@@ -455,7 +461,6 @@
             score -= 500; 
             reasons.push("完成面子破壊");
         } else {
-            // 孤立牌処理ボーナス
             if(getType(discard)==='ji') {
                 score += 80;
                 reasons.push("孤立字牌");
@@ -471,7 +476,7 @@
             }
         }
 
-        // 2. 安全度
+        // 2. 安全度 (リーチ時のみ表示用に理由セット、平場は内部計算のみ)
         let safety = 0;
         let safetyReason = "無筋";
         if(river.includes(discard)) { safety = 100; safetyReason = "現物"; }
@@ -538,27 +543,17 @@
 
         let results = fullHand.map(tile => {
             const eff = getConnectors(tile, fullHand);
-            // 安全度詳細を取得
-            let safeDetails = { level:0, reason:"無筋" };
-            if(river.includes(tile)) safeDetails = { level:100, reason:"現物" };
-            else if(getType(tile)==='ji') safeDetails = { level:30, reason:"字牌" };
-            else if(getNum(tile)===1 || getNum(tile)===9) safeDetails = { level:20, reason:"端牌" };
-
-            // 評価実行
+            // 評価
             const eval = evaluateHand(scenario, tile);
             
-            // 安全度詳細の上書き (evaluateHand内の簡易版と同期)
-            eval.safe = safeDetails; 
-
             // effスコア加算
             if(scenario.isRiichi) {
-                // リーチ時、勝負手なら受け入れ重視
                 if(scenario.myValue >= 3) eval.score += eff.score;
             } else {
                 eval.score += eff.score * 10;
             }
 
-            return { tile, score: eval.score, eff, safe: eval.safe, reasons: eval.reasons, effScore: eval.effScore };
+            return { tile, score: eval.score, eff, safe: {level:eval.safety, reason:eval.safetyReason}, reasons: eval.reasons, effScore: eval.effScore };
         });
 
         results.sort((a,b) => b.score - a.score);
@@ -641,22 +636,29 @@
         document.getElementById('ctx-status').innerText = statusText;
         document.getElementById('ctx-dora').innerText = TILE_MAP[sc.dora]||sc.dora;
         
+        // 河エリア制御
+        const riverWrapper = document.getElementById('river-wrapper');
         const riverTiles = document.getElementById('river-tiles');
         const stickContainer = document.getElementById('riichi-stick-container');
+        
         riverTiles.innerHTML = '';
         stickContainer.innerHTML = ''; 
 
         if(sc.isRiichi) {
+            // リーチ時: 表示
+            riverWrapper.style.display = 'block';
             stickContainer.innerHTML = `<div class="riichi-stick"><div class="riichi-dot"></div></div>`;
             document.getElementById('alert-msg').style.display='block';
             document.getElementById('game-table').classList.add('danger-mode');
+            
+            sc.river.forEach(t => {
+                riverTiles.innerHTML += `<div class="small-tile ${getType(t)}">${TILE_MAP[t]||t}</div>`;
+            });
         } else {
-             document.getElementById('game-table').classList.remove('danger-mode');
+            // 平場: 非表示
+            riverWrapper.style.display = 'none';
+            document.getElementById('game-table').classList.remove('danger-mode');
         }
-
-        sc.river.forEach(t => {
-            riverTiles.innerHTML += `<div class="small-tile ${getType(t)}">${TILE_MAP[t]||t}</div>`;
-        });
 
         const handDiv = document.getElementById('my-hand');
         handDiv.innerHTML='';
@@ -707,6 +709,7 @@
         const badge = document.getElementById('res-badge');
         const title = document.getElementById('res-title');
         const body = document.getElementById('res-body');
+        const isRiichi = currentScenario.isRiichi;
 
         if(isWin) {
             badge.className = 'res-badge correct'; badge.innerText = 'EXCELLENT';
@@ -717,16 +720,22 @@
         }
 
         let html = '';
+        
+        // USER
         html += `<div class="analysis-box ${isWin?'good':'bad'}">`;
         html += `<div class="box-title">YOUR CHOICE</div>`;
         html += `<div class="box-main">${tileHtml(user.tile)}</div>`;
         html += `<div class="res-detail">`;
         html += `<ul>`;
         html += `<li>理由: <b>${user.reasons.length?user.reasons.join(', '):'特になし'}</b></li>`;
-        html += `<li>安全度: ${user.safe.reason} (${user.safe.level}%)</li>`;
+        // 平場では安全度を表示しない
+        if(isRiichi) {
+            html += `<li>安全度: ${user.safe.reason} (${user.safe.level}%)</li>`;
+        }
         html += `<li>有効牌: ${user.eff.list.length>0 ? user.eff.list.map(t=>tileHtml(t)).join('') : 'なし'} <small>(評価点:${user.effScore})</small></li>`;
         html += `</ul></div></div>`;
 
+        // AI
         if(!isWin) {
             html += `<div class="analysis-box good">`;
             html += `<div class="box-title">AI RECOMMEND</div>`;
@@ -734,7 +743,9 @@
             html += `<div class="res-detail">`;
             html += `<ul>`;
             html += `<li>理由: <b>${best.reasons.length?best.reasons.join(', '):'最大効率'}</b></li>`;
-            html += `<li>安全度: ${best.safe.reason} (${best.safe.level}%)</li>`;
+            if(isRiichi) {
+                html += `<li>安全度: ${best.safe.reason} (${best.safe.level}%)</li>`;
+            }
             html += `<li>有効牌: ${best.eff.list.map(t=>tileHtml(t)).join('')} <small>(評価点:${best.effScore})</small></li>`;
             html += `</ul></div></div>`;
         }
@@ -763,11 +774,11 @@
                 <div class="review-comparison">
                     <div class="review-choice">
                         <div>あなた: ${tileHtml(d.user.tile)} <span style="color:#f33">✕</span></div>
-                        <div style="font-size:0.7rem; color:#aaa; margin-top:3px;">安全:${d.user.safe.reason}<br>評価:${d.user.effScore}</div>
+                        <div style="font-size:0.7rem; color:#aaa; margin-top:3px;">評価:${d.user.effScore}</div>
                     </div>
                     <div class="review-choice">
                         <div>正解: ${tileHtml(d.best.tile)} <span style="color:#0c6">◎</span></div>
-                        <div style="font-size:0.7rem; color:#aaa; margin-top:3px;">安全:${d.best.safe.reason}<br>評価:${d.best.effScore}</div>
+                        <div style="font-size:0.7rem; color:#aaa; margin-top:3px;">評価:${d.best.effScore}</div>
                     </div>
                 </div>
             `;
