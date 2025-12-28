@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0f0f12">
+    <meta name="theme-color" content="#1a1a1a">
     <title>ナニを切るんだい</title>
     <style>
         :root {
-            --bg-grad-start: #1a2a22;
-            --bg-grad-end: #050505;
-            --glass-bg: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.15);
-            --text-gold: #d4af37;
-            --text-white: #f5f5f7;
-            --text-gray: #8e8e93;
+            /* 画面を少し明るく調整 */
+            --bg-grad-start: #2f4036; /* 前より明るい深緑 */
+            --bg-grad-end: #1a1a1a;   /* 真っ黒からダークグレーへ */
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-gold: #ffcc00;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a5;
             --danger: #ff453a;
-            --safe: #30d158;
+            --safe: #32d74b;
             --push: #ff9f0a;
             --tile-base-w: 7vw;
-            --shadow-soft: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --shadow-soft: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -47,7 +48,7 @@
             font-weight: 700; 
             letter-spacing: 0.05em;
             color: var(--text-gold); 
-            background: rgba(0,0,0,0.4);
+            background: rgba(30,30,30,0.6); /* 少し明るく */
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--glass-border);
             position: relative; 
@@ -56,18 +57,18 @@
         }
         .home-btn { 
             position: absolute; left: 16px; bottom: 10px;
-            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); 
+            background: rgba(255,255,255,0.15); border: 1px solid var(--glass-border); 
             color: var(--text-white); padding: 4px 10px; border-radius: 20px; 
             font-size: 0.7rem; cursor: pointer; transition: 0.2s;
         }
-        .home-btn:active { background: rgba(255,255,255,0.2); }
+        .home-btn:active { background: rgba(255,255,255,0.3); }
         
         .status-bar { 
             padding: 8px 20px; 
             display: flex; justify-content: space-between; 
             font-size: 0.75rem; color: var(--text-gray); font-weight: 500;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(30,30,30,0.4); /* 少し明るく */
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             flex-shrink: 0;
         }
         
@@ -81,9 +82,10 @@
             justify-content: center; 
             padding-bottom: 30px;
         }
+        /* 危険モード時の演出（少し控えめに） */
         .container.danger-mode::before {
             content: ""; position: absolute; inset: 0;
-            box-shadow: inset 0 0 100px rgba(255, 69, 58, 0.2);
+            box-shadow: inset 0 0 80px rgba(255, 69, 58, 0.15);
             pointer-events: none; z-index: 0;
         }
 
@@ -120,8 +122,8 @@
         .dora-label { font-size: 0.7rem; color: var(--text-push); font-weight: 700; letter-spacing: 0.05em; }
         .dora-box { 
             font-size: 1.6rem; 
-            background: rgba(0,0,0,0.4); padding: 0 12px; border-radius: 6px; 
-            color: var(--text-gold); border: 1px solid rgba(212, 175, 55, 0.3); 
+            background: rgba(0,0,0,0.3); padding: 0 12px; border-radius: 6px; 
+            color: var(--text-gold); border: 1px solid rgba(255, 204, 0, 0.4); 
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
@@ -129,7 +131,6 @@
         .river-wrapper {
             width: 100%; max-width: 420px; margin: 0 auto 30px; padding: 0 10px;
             flex-shrink: 0; position: relative; z-index: 1;
-            /* 初期状態は非表示（JSで制御） */
             display: none; 
         }
         .river-container {
@@ -137,7 +138,6 @@
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
-            /* リーチ棒用に上部余白確保 */
             padding: 40px 12px 16px 12px; 
             min-height: 160px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -151,11 +151,11 @@
         .small-tile { 
             font-size: 26px; 
             color: #000; 
-            background: linear-gradient(to bottom, #fff, #eee);
+            background: linear-gradient(to bottom, #fff, #f0f0f0);
             width: 36px; height: 48px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.8);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
             line-height: 1;
         }
         .small-tile.man { color: #b71c1c; }
@@ -168,7 +168,7 @@
             box-shadow: 0 0 12px rgba(255, 69, 58, 0.8); 
             border-radius: 3px; 
             position: absolute; 
-            top: 15px; /* 枠内上部 */
+            top: 15px; 
             left: 50%; transform: translateX(-50%);
             animation: pulse 1.5s infinite ease-in-out; 
             z-index: 5;
@@ -193,17 +193,17 @@
             width: var(--tile-base-w); 
             height: calc(var(--tile-base-w) * 1.38); 
             max-width: 54px; max-height: 75px;
-            background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%); 
+            background: linear-gradient(to bottom, #ffffff 0%, #eeeeee 100%); 
             color: #000; font-size: 6.5vw; 
             display: flex; align-items: center; justify-content: center;
             border-radius: 5px; cursor: pointer; 
-            box-shadow: 0 6px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.9); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,1); 
             position: relative; margin: 0 2px; user-select: none;
             transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         @media (min-width: 600px) { .tile { font-size: 38px; } }
         
-        .tile:active { transform: translateY(8px) scale(0.95); filter: brightness(0.9); }
+        .tile:active { transform: translateY(8px) scale(0.95); filter: brightness(0.95); }
         .tile.tsumo { margin-left: 3.5vw; }
         .tile.tsumo::before {
             content: "ツモ"; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
@@ -214,38 +214,27 @@
         .tile-inline { display: inline-block; background: #fff; color: #000; padding: 0 4px; border-radius: 3px; margin: 0 2px; font-size: 0.9em; font-weight: bold; border: 1px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .tile-inline.man { color: #b71c1c; } .tile-inline.sou { color: #107c10; } .tile-inline.pin { color: #005a9e; }
 
-        /* アラート (上部) */
-        .alert-overlay {
-            position: absolute; 
-            top: 20%; 
-            left: 50%; transform: translate(-50%, -50%);
-            background: rgba(255, 69, 58, 0.95); padding: 8px 30px; color: #fff; font-weight: 900; font-size: 1.5rem;
-            border-radius: 50px; animation: flash 1s infinite alternate; pointer-events: none; z-index: 20; display: none;
-            border: 3px solid rgba(255,255,255,0.8); box-shadow: 0 0 40px rgba(255, 69, 58, 0.6); white-space: nowrap; letter-spacing: 0.1em;
-        }
-        @keyframes flash { from { opacity: 0.8; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } }
-
         /* モーダル */
         .modal { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             z-index: 100; justify-content: center; align-items: flex-end; 
         }
         .modal-content {
-            background: #1c1c1e; width: 100%; max-width: 600px; 
+            background: #252525; width: 100%; max-width: 600px; 
             border-top: 1px solid #333;
             padding: 24px 20px; padding-bottom: max(30px, env(safe-area-inset-bottom));
-            border-radius: 24px 24px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            border-radius: 24px 24px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.4);
             max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .analysis-box { background: #2c2c2e; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 5px solid #555; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .analysis-box { background: #333; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 5px solid #555; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .analysis-box.good { border-left-color: var(--safe); }
         .analysis-box.bad { border-left-color: var(--danger); }
         .analysis-box.push { border-left-color: var(--push); }
         
-        .box-title { font-size: 0.7rem; color: #8e8e93; margin-bottom: 6px; display: flex; justify-content: space-between; font-weight: 700; letter-spacing: 0.05em; }
+        .box-title { font-size: 0.7rem; color: #a0a0a0; margin-bottom: 6px; display: flex; justify-content: space-between; font-weight: 700; letter-spacing: 0.05em; }
         .box-main { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 1.2rem; }
 
         .res-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; margin-bottom: 8px; letter-spacing: 0.05em; }
@@ -254,7 +243,7 @@
         .res-badge.push { background: var(--push); color: #fff; }
 
         .res-title { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 12px; line-height: 1.2; }
-        .res-detail { font-size: 0.9rem; line-height: 1.6; color: #d1d1d6; }
+        .res-detail { font-size: 0.9rem; line-height: 1.6; color: #dcdcdc; }
         .res-detail b { color: var(--text-gold); }
         .res-detail ul { margin: 6px 0 6px 18px; padding: 0; }
         .res-detail li { margin-bottom: 4px; }
@@ -271,9 +260,9 @@
         #screen-home { justify-content: center; align-items: center; padding: 20px; text-align: center; }
         .title-logo { font-size: 3rem; font-weight: 900; color: var(--text-gold); margin-bottom: 20px; text-shadow: 0 0 30px rgba(212, 175, 55, 0.5); line-height: 1.1; letter-spacing: -0.02em; }
         .best-streak-box { 
-            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
             padding: 25px 50px; border-radius: 20px; margin: 40px 0; 
-            border: 1px solid rgba(255,255,255,0.1); 
+            border: 1px solid rgba(255,255,255,0.15); 
             box-shadow: var(--shadow-soft);
         }
         .best-streak-num { font-size: 4rem; font-weight: 800; color: var(--text-white); line-height: 1; margin-top: 5px; }
@@ -286,8 +275,8 @@
         .menu-btn:active { transform: scale(0.96); }
         
         /* 復習 */
-        #screen-review { background: #000; overflow-y: auto; padding: 20px 10px; padding-bottom: max(30px, env(safe-area-inset-bottom)); }
-        .review-item { background: #1c1c1e; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #333; }
+        #screen-review { background: #1a1a1a; overflow-y: auto; padding: 20px 10px; padding-bottom: max(30px, env(safe-area-inset-bottom)); }
+        .review-item { background: #252525; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #333; }
         .review-hand { display: flex; flex-wrap: nowrap; gap: 2px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #333; }
         .review-hand .tile { width: 30px; height: 42px; font-size: 20px; max-width: none; pointer-events: none; box-shadow: none; border: 1px solid #ccc;}
         .review-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -301,24 +290,16 @@
 
     <div id="screen-home" style="display:flex; flex-direction:column; height:100%;" class="active">
         <div class="title-logo">ナニを<br>切るんだい</div>
-        <div style="font-size:0.85rem; color:#888; font-weight:500; letter-spacing:0.1em;">PUSH / PULL / EFFICIENCY</div>
+        <div style="font-size:0.85rem; color:#aaa; font-weight:500; letter-spacing:0.1em;">PUSH / PULL / EFFICIENCY</div>
         
         <div class="best-streak-box">
-            <div style="font-size:0.75rem; color:#aaa; letter-spacing:0.1em; font-weight:700;">BEST STREAK</div>
+            <div style="font-size:0.75rem; color:#ccc; letter-spacing:0.1em; font-weight:700;">BEST STREAK</div>
             <div class="best-streak-num" id="home-best-streak">0</div>
         </div>
 
         <button class="menu-btn" onclick="startGame()">修行開始</button>
-        <button class="menu-btn" style="background:linear-gradient(135deg, #3a3a3c, #2c2c2e); color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.4);" onclick="showReview()">間違えた問題</button>
-
-        <div style="margin-top: 30px; text-align: center;">
-            <div style="font-size:0.7rem; color:#555; margin-bottom:8px;">Ver 1.1</div>
-            <div style="color: #888; font-size: 0.8rem; text-decoration: underline; cursor: pointer; padding: 10px;" 
-                 onclick="window.location.reload()">
-                🔄 アップデートを確認 (再読込)
-            </div>
-        </div>
-        </div>
+        <button class="menu-btn" style="background:linear-gradient(135deg, #444, #333); color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.3);" onclick="showReview()">間違えた問題</button>
+    </div>
 
     <div id="screen-game" style="display:none; flex-direction:column; height:100%;">
         <div class="header">
@@ -331,14 +312,13 @@
         </div>
 
         <div class="container" id="game-table">
-            <div id="alert-msg" class="alert-overlay">REACH!!</div>
-            
             <div class="info-wrapper">
                 <div class="area-label">INFO</div>
                 <div class="center-info">
                     <div class="info-text">
                         <div id="ctx-round" style="font-weight:700; color:#fff; font-size:0.9rem;"></div>
                         <div id="ctx-status" style="color:#aaa;"></div>
+                        <div id="ctx-remain" style="color:#8ca; font-size:0.8rem; margin-top:2px; font-weight:bold;"></div>
                     </div>
                     <div class="dora-container">
                         <span class="dora-label">DORA</span>
@@ -484,7 +464,7 @@
             }
         }
 
-        // 2. 安全度 (リーチ時のみ表示用に理由セット、平場は内部計算のみ)
+        // 2. 安全度
         let safety = 0;
         let safetyReason = "無筋";
         if(river.includes(discard)) { safety = 100; safetyReason = "現物"; }
@@ -551,6 +531,12 @@
 
         let results = fullHand.map(tile => {
             const eff = getConnectors(tile, fullHand);
+            const safe = {level:0, reason:"無筋"};
+            // 安全度詳細
+            if(river.includes(tile)) { safe.level=100; safe.reason="現物"; }
+            else if(getType(tile)==='ji') { safe.level=30; safe.reason="字牌"; }
+            else if(getNum(tile)===1 || getNum(tile)===9) { safe.level=20; safe.reason="端牌"; }
+
             // 評価
             const eval = evaluateHand(scenario, tile);
             
@@ -561,7 +547,7 @@
                 eval.score += eff.score * 10;
             }
 
-            return { tile, score: eval.score, eff, safe: {level:eval.safety, reason:eval.safetyReason}, reasons: eval.reasons, effScore: eval.effScore };
+            return { tile, score: eval.score, eff, safe: safe, reasons: eval.reasons, effScore: eval.effScore };
         });
 
         results.sort((a,b) => b.score - a.score);
@@ -579,6 +565,9 @@
         const scoreState = Math.floor(Math.random()*3) - 1; 
         const dora = deck[Math.floor(Math.random()*deck.length)];
         let myValue = Math.floor(Math.random()*4); 
+        
+        // ランダムな残りツモ数 (4〜17)
+        const remain = Math.floor(Math.random() * 14) + 4;
 
         let hand = ['1p','2p','3p','4s','5s','6s','8s','8s','8s','6s','6s','2m','3m','5z'];
         if(Math.random() > 0.3) {
@@ -597,7 +586,7 @@
         for(let i=0; i<15; i++) river.push(deck[Math.floor(Math.random()*deck.length)]);
         river.push(hand[0]);
 
-        return { isRiichi, scoreState, myValue, hand, tsumo, river, dora };
+        return { isRiichi, scoreState, myValue, hand, tsumo, river, dora, remain };
     }
 
     // --- ゲーム進行 ---
@@ -628,7 +617,7 @@
 
     function nextProblem() {
         document.getElementById('modal').style.display='none';
-        document.getElementById('alert-msg').style.display='none';
+        // document.getElementById('alert-msg').style.display='none'; (削除済)
         document.getElementById('game-table').classList.remove('danger-mode');
         
         const sc = generateScenario();
@@ -643,8 +632,8 @@
         document.getElementById('ctx-round').innerText = sc.scoreState===1?"トップ目":sc.scoreState===-1?"ラス目":"平点";
         document.getElementById('ctx-status').innerText = statusText;
         document.getElementById('ctx-dora').innerText = TILE_MAP[sc.dora]||sc.dora;
+        document.getElementById('ctx-remain').innerText = "残りツモ: " + sc.remain + "回";
         
-        // 河エリア制御
         const riverWrapper = document.getElementById('river-wrapper');
         const riverTiles = document.getElementById('river-tiles');
         const stickContainer = document.getElementById('riichi-stick-container');
@@ -653,17 +642,15 @@
         stickContainer.innerHTML = ''; 
 
         if(sc.isRiichi) {
-            // リーチ時: 表示
             riverWrapper.style.display = 'block';
             stickContainer.innerHTML = `<div class="riichi-stick"><div class="riichi-dot"></div></div>`;
-            document.getElementById('alert-msg').style.display='block';
+            // アラートメッセージ表示は削除済、枠の赤色は維持
             document.getElementById('game-table').classList.add('danger-mode');
             
             sc.river.forEach(t => {
                 riverTiles.innerHTML += `<div class="small-tile ${getType(t)}">${TILE_MAP[t]||t}</div>`;
             });
         } else {
-            // 平場: 非表示
             riverWrapper.style.display = 'none';
             document.getElementById('game-table').classList.remove('danger-mode');
         }
@@ -728,22 +715,18 @@
         }
 
         let html = '';
-        
-        // USER
         html += `<div class="analysis-box ${isWin?'good':'bad'}">`;
         html += `<div class="box-title">YOUR CHOICE</div>`;
         html += `<div class="box-main">${tileHtml(user.tile)}</div>`;
         html += `<div class="res-detail">`;
         html += `<ul>`;
         html += `<li>理由: <b>${user.reasons.length?user.reasons.join(', '):'特になし'}</b></li>`;
-        // 平場では安全度を表示しない
         if(isRiichi) {
             html += `<li>安全度: ${user.safe.reason} (${user.safe.level}%)</li>`;
         }
         html += `<li>有効牌: ${user.eff.list.length>0 ? user.eff.list.map(t=>tileHtml(t)).join('') : 'なし'} <small>(評価点:${user.effScore})</small></li>`;
         html += `</ul></div></div>`;
 
-        // AI
         if(!isWin) {
             html += `<div class="analysis-box good">`;
             html += `<div class="box-title">AI RECOMMEND</div>`;
