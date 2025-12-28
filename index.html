@@ -7,7 +7,6 @@
     <title>ナニを切るんだい</title>
     <style>
         :root {
-            /* モダンで深みのある配色 */
             --bg-grad-start: #1a2a22;
             --bg-grad-end: #050505;
             --glass-bg: rgba(255, 255, 255, 0.08);
@@ -82,14 +81,12 @@
             justify-content: center; 
             padding-bottom: 30px;
         }
-        /* 危険モード時の演出 */
         .container.danger-mode::before {
             content: ""; position: absolute; inset: 0;
             box-shadow: inset 0 0 100px rgba(255, 69, 58, 0.2);
             pointer-events: none; z-index: 0;
         }
 
-        /* --- 共通ラベルスタイル --- */
         .area-label {
             font-size: 0.65rem;
             color: var(--text-gray);
@@ -105,7 +102,6 @@
             background: var(--text-gold); border-radius: 50%;
         }
 
-        /* --- 情報エリア --- */
         .info-wrapper {
             width: 90%; max-width: 420px; margin: 0 auto 20px; z-index: 1;
         }
@@ -128,7 +124,6 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* --- 河エリア --- */
         .river-wrapper {
             width: 100%; max-width: 420px; margin: 0 auto 30px; padding: 0 10px;
             flex-shrink: 0; position: relative; z-index: 1;
@@ -144,13 +139,10 @@
             position: relative;
             box-shadow: var(--shadow-soft);
         }
-        
         .river-tiles { 
             display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; 
             width: 100%; justify-items: center;
         }
-
-        /* 河の牌デザイン */
         .small-tile { 
             font-size: 26px; 
             color: #000; 
@@ -165,7 +157,6 @@
         .small-tile.sou { color: #107c10; }
         .small-tile.pin { color: #005a9e; }
         
-        /* リーチ棒 */
         .riichi-stick { 
             width: 180px; height: 6px; 
             background: #fff; 
@@ -183,7 +174,6 @@
             box-shadow: 0 0 5px #ff453a;
         }
 
-        /* --- 手牌エリア --- */
         .hand-wrapper {
             width: 100%; padding: 0 10px; z-index: 1;
         }
@@ -218,10 +208,9 @@
         .tile-inline { display: inline-block; background: #fff; color: #000; padding: 0 4px; border-radius: 3px; margin: 0 2px; font-size: 0.9em; font-weight: bold; border: 1px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .tile-inline.man { color: #b71c1c; } .tile-inline.sou { color: #107c10; } .tile-inline.pin { color: #005a9e; }
 
-        /* アラート (位置を上部に移動) */
+        /* アラート (上部) */
         .alert-overlay {
             position: absolute; 
-            /* 河の上部、情報エリア付近に移動 */
             top: 20%; 
             left: 50%; transform: translate(-50%, -50%);
             background: rgba(255, 69, 58, 0.95); padding: 8px 30px; color: #fff; font-weight: 900; font-size: 1.5rem;
@@ -272,7 +261,6 @@
         }
         .next-btn:active { transform: scale(0.97); }
 
-        /* ホーム */
         #screen-home { justify-content: center; align-items: center; padding: 20px; text-align: center; }
         .title-logo { font-size: 3rem; font-weight: 900; color: var(--text-gold); margin-bottom: 20px; text-shadow: 0 0 30px rgba(212, 175, 55, 0.5); line-height: 1.1; letter-spacing: -0.02em; }
         .best-streak-box { 
@@ -290,7 +278,6 @@
         }
         .menu-btn:active { transform: scale(0.96); }
         
-        /* 復習 */
         #screen-review { background: #000; overflow-y: auto; padding: 20px 10px; padding-bottom: max(30px, env(safe-area-inset-bottom)); }
         .review-item { background: #1c1c1e; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #333; }
         .review-hand { display: flex; flex-wrap: nowrap; gap: 2px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #333; }
@@ -363,7 +350,7 @@
                 <div id="res-badge" class="res-badge"></div>
                 <div id="res-title" class="res-title"></div>
                 <div id="res-body"></div>
-                <button class="next-btn" onclick="nextProblem()">次の局面へ</button>
+                <button class="next-btn" onclick="nextProblem()">NEXT HAND</button>
             </div>
         </div>
     </div>
@@ -399,41 +386,116 @@
         localStorage.setItem('mahjong_history', JSON.stringify(historyData));
     }
 
-    // --- ロジック: 完成面子検出 ---
-    function getMentsuTiles(hand) {
+    // --- ロジック: 完成面子数カウント (修正版) ---
+    function countMentsu(hand) {
         let tiles = [...hand];
-        let mentsuTiles = [];
         const order = {'man':0,'pin':1,'sou':2,'ji':3};
         tiles.sort((a,b)=>{
             if(getType(a)!==getType(b)) return order[getType(a)]-order[getType(b)];
             return getNum(a)-getNum(b);
         });
-        let usedIndices = new Set();
+
+        let count = 0;
+        let used = new Array(tiles.length).fill(false);
+
+        // 1. 刻子優先でカウント
         for(let i=0; i<tiles.length-2; i++) {
-            if(usedIndices.has(i)) continue;
+            if(used[i]) continue;
             if(tiles[i] === tiles[i+1] && tiles[i] === tiles[i+2]) {
-                mentsuTiles.push(tiles[i], tiles[i+1], tiles[i+2]);
-                usedIndices.add(i); usedIndices.add(i+1); usedIndices.add(i+2);
+                count++;
+                used[i] = used[i+1] = used[i+2] = true;
             }
         }
-        for(let i=0; i<tiles.length-2; i++) {
-            if(usedIndices.has(i)) continue;
+        // 2. 順子
+        for(let i=0; i<tiles.length; i++) {
+            if(used[i]) continue;
             if(getType(tiles[i]) === 'ji') continue;
-            let next1 = (getNum(tiles[i])+1) + getType(tiles[i]).charAt(0); 
-            let next2 = (getNum(tiles[i])+2) + getType(tiles[i]).charAt(0);
-            let idx1 = -1, idx2 = -1;
+
+            let t1 = tiles[i];
+            let t2 = (getNum(t1)+1) + getType(t1).charAt(0);
+            let t3 = (getNum(t1)+2) + getType(t1).charAt(0);
+
+            // t2を探す
+            let idx2 = -1;
             for(let j=i+1; j<tiles.length; j++) {
-                if(!usedIndices.has(j)) {
-                    if(tiles[j] === next1 && idx1===-1) idx1 = j;
-                    else if(tiles[j] === next2 && idx2===-1) idx2 = j;
+                if(!used[j] && tiles[j] === t2) { idx2 = j; break; }
+            }
+            // t3を探す
+            let idx3 = -1;
+            for(let k=i+1; k<tiles.length; k++) {
+                if(!used[k] && tiles[k] === t3) { 
+                    if(k !== idx2) { idx3 = k; break; }
                 }
             }
-            if(idx1 !== -1 && idx2 !== -1) {
-                mentsuTiles.push(tiles[i], tiles[idx1], tiles[idx2]);
-                usedIndices.add(i); usedIndices.add(idx1); usedIndices.add(idx2);
+
+            if(idx2 !== -1 && idx3 !== -1) {
+                count++;
+                used[i] = true;
+                used[idx2] = true;
+                used[idx3] = true;
             }
         }
-        return mentsuTiles;
+        return count;
+    }
+
+    // --- 評価関数 (修正版) ---
+    function evaluateHand(scenario, discard) {
+        const hand = [...scenario.hand, scenario.tsumo];
+        const remaining = hand.filter((_,i)=>i!==hand.indexOf(discard)); 
+        const river = scenario.river;
+        
+        let score = 0;
+        let reasons = [];
+
+        // 1. 完成メンツ破壊チェック
+        const mentsuBefore = countMentsu(hand);
+        const mentsuAfter = countMentsu(remaining);
+        
+        if(mentsuAfter < mentsuBefore) {
+            score -= 500; 
+            reasons.push("完成面子破壊");
+        } else {
+            // 孤立牌処理ボーナス
+            if(getType(discard)==='ji') {
+                score += 80;
+                reasons.push("孤立字牌");
+            } else {
+                let hasNeighbor = false;
+                remaining.forEach(t => {
+                    if(getType(t)===getType(discard) && Math.abs(getNum(t)-getNum(discard))<=2) hasNeighbor=true;
+                });
+                if(!hasNeighbor) {
+                    score += 60;
+                    reasons.push("完全孤立");
+                }
+            }
+        }
+
+        // 2. 安全度
+        let safety = 0;
+        let safetyReason = "無筋";
+        if(river.includes(discard)) { safety = 100; safetyReason = "現物"; }
+        else if(getType(discard)==='ji') { safety = 30; safetyReason = "字牌"; }
+        else if(getNum(discard)===1 || getNum(discard)===9) { safety = 20; safetyReason = "端牌"; }
+
+        if(scenario.isRiichi) {
+            if(scenario.myValue >= 3) {
+                 score += 20; 
+                 reasons.push("勝負手プッシュ");
+            } else {
+                score += safety * 3;
+                if(safety === 100) reasons.push("現物安全");
+            }
+        } else {
+            score += safety * 0.1;
+        }
+        
+        let effScore = 50; 
+        if(mentsuAfter < mentsuBefore) effScore = 0;
+        else if(getType(discard)==='ji') effScore = 90;
+        else if(score > 50) effScore = 80;
+        
+        return { score, reasons, safety, safetyReason, effScore };
     }
 
     // --- ロジック: 有効牌計算 ---
@@ -468,24 +530,6 @@
         return { list: connects, score: score }; 
     }
 
-    // --- ロジック: 安全度詳細 ---
-    function getSafetyDetails(tile, river) {
-        if(river.includes(tile)) return { level: 100, reason: "現物" };
-        const type = getType(tile);
-        if(type === 'ji') return { level: 30, reason: "字牌(生)" };
-        const num = getNum(tile);
-        const sujiMap = {1:[4], 2:[5], 3:[6], 4:[1,7], 5:[2,8], 6:[3,9], 7:[4], 8:[5], 9:[6]};
-        const sujiCandidates = sujiMap[num];
-        let isSuji = false;
-        if(sujiCandidates) {
-             const suffix = tile.slice(-1);
-             isSuji = sujiCandidates.some(s => river.includes(s + suffix));
-        }
-        if(isSuji) return { level: 50, reason: "スジ" };
-        if(num === 1 || num === 9) return { level: 20, reason: "無筋(端)" };
-        return { level: 0, reason: "無筋(危険)" };
-    }
-
     // --- 評価・分析 ---
     function analyze(scenario) {
         const fullHand = [...scenario.hand, scenario.tsumo];
@@ -494,34 +538,27 @@
 
         let results = fullHand.map(tile => {
             const eff = getConnectors(tile, fullHand);
-            const safe = getSafetyDetails(tile, river);
-            
-            const mentsuBefore = getMentsuTiles(fullHand);
-            const isMentsuPart = mentsuBefore.includes(tile);
-            
-            let score = 0;
-            let reasons = [];
+            // 安全度詳細を取得
+            let safeDetails = { level:0, reason:"無筋" };
+            if(river.includes(tile)) safeDetails = { level:100, reason:"現物" };
+            else if(getType(tile)==='ji') safeDetails = { level:30, reason:"字牌" };
+            else if(getNum(tile)===1 || getNum(tile)===9) safeDetails = { level:20, reason:"端牌" };
 
-            if(isMentsuPart) {
-                score -= 500;
-                reasons.push("完成面子破壊");
-            }
+            // 評価実行
+            const eval = evaluateHand(scenario, tile);
+            
+            // 安全度詳細の上書き (evaluateHand内の簡易版と同期)
+            eval.safe = safeDetails; 
 
-            if(isRiichi) {
-                if(safe.level === 100) score += 500; 
-                else score += safe.level * 3;
-                if(scenario.myValue >= 3 && safe.level < 50) score += 20; 
-                score += eff.score;
+            // effスコア加算
+            if(scenario.isRiichi) {
+                // リーチ時、勝負手なら受け入れ重視
+                if(scenario.myValue >= 3) eval.score += eff.score;
             } else {
-                score += eff.score * 10;
-                score += safe.level * 0.1;
-                if(getType(tile)==='ji') { score += 50; reasons.push("字牌処理"); }
+                eval.score += eff.score * 10;
             }
-            
-            let effScore = eff.score * 10;
-            if(isMentsuPart) effScore = 0;
 
-            return { tile, score, eff, safe, reasons, effScore };
+            return { tile, score: eval.score, eff, safe: eval.safe, reasons: eval.reasons, effScore: eval.effScore };
         });
 
         results.sort((a,b) => b.score - a.score);
