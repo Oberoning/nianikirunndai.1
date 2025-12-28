@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#1a1a1a">
-    <title>ナニを切るんだい - PRO SPEC</title>
+    <title>ナニを切るんだい</title>
     <style>
         :root {
             --bg-grad-start: #2f4036;
@@ -69,7 +69,7 @@
             content: ""; display: block; width: 4px; height: 4px; background: var(--text-gold); border-radius: 50%;
         }
 
-        /* --- Info Area (Score/Conditions) --- */
+        /* --- Info Area --- */
         .info-wrapper { width: 90%; max-width: 420px; margin: 0 auto 20px; z-index: 1; }
         .center-info { 
             background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -87,7 +87,7 @@
             color: var(--text-gold); border: 1px solid rgba(255, 204, 0, 0.4); text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* --- River Area (Tsumogiri Visual) --- */
+        /* --- River Area --- */
         .river-wrapper {
             width: 100%; max-width: 420px; margin: 0 auto 30px; padding: 0 10px;
             flex-shrink: 0; position: relative; z-index: 1; display: none; 
@@ -153,7 +153,7 @@
         }
         
         .tile.man { color: #b71c1c; } .tile.sou { color: #107c10; } .tile.pin { color: #005a9e; }
-        .tile.red { color: #eb2f2f; } /* 赤ドラ */
+        .tile.red { color: #eb2f2f; }
         
         .tile-inline { display: inline-block; background: #fff; color: #000; padding: 0 4px; border-radius: 3px; margin: 0 2px; font-size: 0.9em; font-weight: bold; border: 1px solid #ccc; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .tile-inline.man { color: #b71c1c; } .tile-inline.sou { color: #107c10; } .tile-inline.pin { color: #005a9e; }
@@ -247,7 +247,7 @@
         <button class="menu-btn" style="background:linear-gradient(135deg, #444, #333); color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.3);" onclick="showReview()">間違えた問題</button>
 
         <div class="version-area">
-            <div id="version-display" class="version-status" style="color:#888;">Ver 2.0 (Pro)</div>
+            <div id="version-display" class="version-status" style="color:#888;">Ver 2.1 (Pro)</div>
             <div id="update-msg" style="font-size:0.75rem; color:#aaa;"></div>
             <button class="update-btn" onclick="checkAndUpdate()">🔄 更新を確認 (リロード)</button>
         </div>
@@ -311,7 +311,7 @@
 
 <script>
     // --- Config ---
-    const CURRENT_VERSION = "2.0 (Pro)";
+    const CURRENT_VERSION = "2.1 (Pro)";
     const TILE_MAP = {'1m':'🀇','2m':'🀈','3m':'🀉','4m':'🀊','5m':'🀋','6m':'🀌','7m':'🀍','8m':'🀎','9m':'🀏','1s':'🀐','2s':'🀑','3s':'🀒','4s':'🀓','5s':'🀔','6s':'🀕','7s':'🀖','8s':'🀗','9s':'🀘','1p':'🀙','2p':'🀚','3p':'🀛','4p':'🀜','5p':'🀝','6p':'🀞','7p':'🀟','8p':'🀠','9p':'🀡','1z':'🀀','2z':'🀁','3z':'🀂','4z':'🀃','5z':'🀆','6z':'🀅','7z':'🀄'};
     
     // 赤ドラ対応型判別
@@ -421,7 +421,7 @@
                 for (let i = -2; i <= 2; i++) {
                     const targetNum = num + i;
                     if(targetNum < 1 || targetNum > 9) continue;
-                    const targetTile = targetNum + type.charAt(0); // 1m etc
+                    const targetTile = targetNum + type.charAt(0); 
                     if(i === 0) { 
                         const count = normalizedRem.filter(x => x === targetTile).length;
                         if(count === 1 && !connects.includes(targetTile)) { connects.push(targetTile); score += 4; }
@@ -442,7 +442,7 @@
         const hand = [...scenario.hand, scenario.tsumo];
         const remaining = hand.filter((_,i)=>i!==hand.indexOf(discard)); 
         const river = scenario.river; // [{t:'1m', g:true}, ...]
-        const riverTiles = river.map(r => r.t.replace('r','')); // 単純な文字配列化
+        const riverTiles = river.map(r => r.t.replace('r','')); 
         
         let score = 0;
         let reasons = [];
@@ -457,7 +457,7 @@
             if(getType(discard)==='ji') {
                 score += 80; reasons.push("字牌整理");
             } else {
-                // 赤ドラを捨てるのは減点 (形が悪くても残す傾向)
+                // 赤ドラを捨てるのは減点
                 if(discard.includes('r')) {
                     score -= 30; reasons.push("赤ドラ放出");
                 }
@@ -492,14 +492,11 @@
         // 3. 状況判断 (押し引き)
         if(scenario.isRiichi) {
             // リーチを受けている
-            // 勝負手(ドラ3以上)で残りツモがある程度あればプッシュ
-            // 赤ドラ枚数カウント
             const redCount = remaining.filter(t=>t.includes('r')).length;
-            const effectiveValue = scenario.myValue + redCount; // 赤を含めた評価値
+            const effectiveValue = scenario.myValue + redCount; 
 
             if(effectiveValue >= 3 && scenario.remain > 5) {
                 score += 25; reasons.push("勝負手プッシュ");
-                // 赤ドラを含むならさらに加点
                 if(remaining.some(t=>t.includes('r'))) score += 10;
             } else {
                 score += safety * 3; // オリ優先
@@ -507,12 +504,8 @@
             }
         } else {
             // 平場
-            // 終盤ケア
             if(scenario.remain < 5) score += safety * 0.5;
             else score += safety * 0.1;
-            
-            // 赤ドラがあるなら、それを使い切るような選択を推奨
-            // (赤ドラのそばの牌の価値を上げる＝切らない、はconnectorsでカバーされるが、赤自体の価値は上で減点済み)
         }
         
         // 効率点微調整
@@ -542,7 +535,7 @@
         return results;
     }
 
-    // --- Scenario Generator (Advanced) ---
+    // --- Scenario Generator ---
     function generateScenario() {
         const suits = ['m','p','s','z'];
         let deck = [];
@@ -550,7 +543,7 @@
         suits.forEach(s => {
             const lim=s==='z'?7:9; 
             for(let i=1;i<=lim;i++) {
-                // 赤ドラ置換ロジック: 各数牌の5の1枚を赤にする
+                // 赤ドラ置換: 各数牌の5の1枚を赤にする
                 if(i===5 && s!=='z') {
                     deck.push('5'+s+'r'); // 赤
                     deck.push('5'+s, '5'+s, '5'+s); // 黒x3
@@ -565,12 +558,12 @@
         // 点数状況詳細
         const rounds = ["東3局", "東4局", "南1局", "南2局", "南3局", "オーラス"];
         const round = rounds[Math.floor(Math.random()*rounds.length)];
-        const rank = Math.floor(Math.random()*3) + 1; // 1~3着 (4着は省略)
-        const diff = Math.floor(Math.random()*20)*1000 + 2000; // 点差
+        const rank = Math.floor(Math.random()*3) + 1; 
+        const diff = Math.floor(Math.random()*20)*1000 + 2000; 
         const scoreDetail = `${rank}着目 / トップと${diff}点差`;
         
-        const dora = deck[Math.floor(Math.random()*deck.length)]; // ドラ表示牌
-        let myValue = Math.floor(Math.random()*3); // 手役の高さベース
+        const dora = deck[Math.floor(Math.random()*deck.length)]; 
+        let myValue = Math.floor(Math.random()*3); 
         
         // 残りツモと河
         const turn = Math.floor(Math.random() * 12) + 5; // 5~16巡目
@@ -581,27 +574,25 @@
 
         // 手牌生成 (13枚)
         let hand = [];
-        // ある程度整った形を作る
         for(let i=0; i<4; i++) {
             const s = ['m','p','s'][Math.floor(Math.random()*3)];
             const n = Math.floor(Math.random()*7)+1;
-            // 確率で赤を入れる
-            const isRed = Math.random() > 0.85;
-            if(Math.random()>0.5) { // 順子
+            // 順子重視で生成
+            if(Math.random()>0.5) { 
                 hand.push(n+s, (n+1)+s, (n+2)+s);
-            } else { // 対子or刻子
+            } else { 
                 hand.push(n+s, n+s);
                 if(Math.random()>0.5) hand.push(n+s);
             }
         }
-        // 数合わせ
+        // 数合わせ (デッキから引くので赤ドラも入る)
         while(hand.length > 13) hand.pop();
         while(hand.length < 13) hand.push(deck[Math.floor(Math.random()*deck.length)]);
         
         // ツモ
         const tsumo = deck[Math.floor(Math.random()*deck.length)];
         
-        // 河生成 (ツモ切り情報付き)
+        // 河生成 (オブジェクト形式: ツモ切り情報付き)
         const river = [];
         for(let i=0; i<turn; i++) {
             const rt = deck[Math.floor(Math.random()*deck.length)];
@@ -653,7 +644,6 @@
             document.getElementById('game-table').classList.add('danger-mode');
             
             sc.river.forEach(obj => {
-                // obj.t = 牌, obj.g = ツモ切り(gray)
                 const isRed = obj.t.includes('r');
                 const displayT = obj.t.replace('r','');
                 const cls = `small-tile ${getType(obj.t)}` + (isRed?' red':'') + (obj.g?' tsumogiri':'');
@@ -680,7 +670,7 @@
         handDiv.appendChild(tsumoEl);
     }
 
-    // (以下、共通関数は変更なし)
+    // 共通関数
     function createTile(t) {
         const d = document.createElement('div');
         const isRed = t.includes('r');
