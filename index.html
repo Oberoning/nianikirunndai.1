@@ -108,13 +108,11 @@
             border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
             line-height: 1; position: relative;
         }
-        /* ツモ切り表現: 暗転 */
         .small-tile.tsumogiri::after {
             content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.25); border-radius: 4px; 
         }
-        
         .small-tile.man { color: #b71c1c; } .small-tile.sou { color: #107c10; } .small-tile.pin { color: #005a9e; }
-        .small-tile.red { color: #eb2f2f; font-weight: bold; } /* 赤ドラ */
+        .small-tile.red { color: #eb2f2f; font-weight: bold; } 
 
         .riichi-stick { 
             width: 180px; height: 6px; background: #fff; box-shadow: 0 0 12px rgba(255, 69, 58, 0.8); 
@@ -151,7 +149,6 @@
             content: "ツモ"; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
             font-size: 0.6rem; color: var(--text-gold); font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
         }
-        
         .tile.man { color: #b71c1c; } .tile.sou { color: #107c10; } .tile.pin { color: #005a9e; }
         .tile.red { color: #eb2f2f; }
         
@@ -251,6 +248,7 @@
             <div id="update-msg" style="font-size:0.75rem; color:#aaa;"></div>
             <button class="update-btn" onclick="checkAndUpdate()">🔄 更新を確認 (リロード)</button>
         </div>
+        <div id="debug-log" style="font-size:0.6rem; color:#555; margin-top:20px;">System Ready.</div>
     </div>
 
     <div id="screen-game" style="display:none; flex-direction:column; height:100%;">
@@ -315,6 +313,7 @@
     const CURRENT_VERSION = "2.1 (Pro)";
     const TILE_MAP = {'1m':'🀇','2m':'🀈','3m':'🀉','4m':'🀊','5m':'🀋','6m':'🀌','7m':'🀍','8m':'🀎','9m':'🀏','1s':'🀐','2s':'🀑','3s':'🀒','4s':'🀓','5s':'🀔','6s':'🀕','7s':'🀖','8s':'🀗','9s':'🀘','1p':'🀙','2p':'🀚','3p':'🀛','4p':'🀜','5p':'🀝','6p':'🀞','7p':'🀟','8p':'🀠','9p':'🀡','1z':'🀀','2z':'🀁','3z':'🀂','4z':'🀃','5z':'🀆','6z':'🀅','7z':'🀄'};
     
+    // 赤ドラ対応型判別
     function getType(t){ 
         if(!t) return '';
         if(t.includes('m')) return 'man';
@@ -322,7 +321,9 @@
         if(t.includes('p')) return 'pin';
         return 'ji';
     }
+    // 赤5は5として扱う
     function getNum(t){ return parseInt(t)||5; }
+    // HTML表示用 (赤対応)
     function tileHtml(t){ 
         if(!t) return '';
         const isRed = t.includes('r');
@@ -332,18 +333,23 @@
     }
 
     // --- State ---
-    let bestStreak = parseInt(localStorage.getItem('mahjong_best_streak') || 0);
-    let currentStreak = parseInt(localStorage.getItem('mahjong_current_streak') || 0);
+    // 保存キーを変更して旧データとの衝突を回避 (Fix blank screen issue)
+    const STORAGE_KEY_STREAK = 'mahjong_pro_streak';
+    const STORAGE_KEY_BEST = 'mahjong_pro_best';
+    const STORAGE_KEY_HISTORY = 'mahjong_pro_history_v2';
+
+    let bestStreak = parseInt(localStorage.getItem(STORAGE_KEY_BEST) || 0);
+    let currentStreak = parseInt(localStorage.getItem(STORAGE_KEY_STREAK) || 0);
     let historyData = [];
     try {
-        const savedHistory = localStorage.getItem('mahjong_history');
+        const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
         if (savedHistory) historyData = JSON.parse(savedHistory);
     } catch (e) { historyData = []; }
 
     function saveData() {
-        localStorage.setItem('mahjong_best_streak', bestStreak);
-        localStorage.setItem('mahjong_current_streak', currentStreak);
-        localStorage.setItem('mahjong_history', JSON.stringify(historyData));
+        localStorage.setItem(STORAGE_KEY_BEST, bestStreak);
+        localStorage.setItem(STORAGE_KEY_STREAK, currentStreak);
+        localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(historyData));
     }
 
     function initVersionCheck() {
@@ -435,8 +441,8 @@
     function evaluateHand(scenario, discard) {
         const hand = [...scenario.hand, scenario.tsumo];
         const remaining = hand.filter((_,i)=>i!==hand.indexOf(discard)); 
-        // River object array -> string array conversion for check
-        const riverTiles = scenario.river.map(r => r.t ? r.t.replace('r','') : ''); 
+        // River object safety check
+        const riverTiles = (scenario.river || []).map(r => (r && r.t) ? r.t.replace('r','') : ''); 
         
         let score = 0;
         let reasons = [];
@@ -507,6 +513,7 @@
         return results;
     }
 
+    // --- Scenario Generator ---
     function generateScenario() {
         const suits = ['m','p','s','z'];
         let deck = [];
@@ -564,55 +571,62 @@
     let currentAnalysis = null;
 
     function renderScene(sc) {
-        document.getElementById('ctx-round').innerText = sc.round;
-        document.getElementById('ctx-detail').innerText = sc.scoreDetail;
-        document.getElementById('ctx-remain').innerText = `残りツモ: ${sc.remain}回`;
-        
-        let alertHtml = "";
-        if(sc.isRiichi) alertHtml += `<span style="color:var(--danger)">■ リーチを受けています</span>`;
-        if(sc.oppCalls > 0) alertHtml += `<span style="color:var(--push); margin-left:10px;">■ 副露:${sc.oppCalls}</span>`;
-        document.getElementById('ctx-alert').innerHTML = alertHtml;
-
-        document.getElementById('ctx-dora').innerHTML = tileHtml(sc.dora);
-        
-        const riverWrapper = document.getElementById('river-wrapper');
-        const riverTiles = document.getElementById('river-tiles');
-        const stickContainer = document.getElementById('riichi-stick-container');
-        
-        riverTiles.innerHTML = '';
-        stickContainer.innerHTML = ''; 
-
-        if(sc.isRiichi) {
-            riverWrapper.style.display = 'block';
-            stickContainer.innerHTML = `<div class="riichi-stick"><div class="riichi-dot"></div></div>`;
-            document.getElementById('game-table').classList.add('danger-mode');
+        try {
+            document.getElementById('ctx-round').innerText = sc.round || '-';
+            document.getElementById('ctx-detail').innerText = sc.scoreDetail || '-';
+            document.getElementById('ctx-remain').innerText = `残りツモ: ${sc.remain}回`;
             
-            sc.river.forEach(obj => {
-                if(!obj || !obj.t) return;
-                const isRed = obj.t.includes('r');
-                const displayT = obj.t.replace('r','');
-                const cls = `small-tile ${getType(obj.t)}` + (isRed?' red':'') + (obj.g?' tsumogiri':'');
-                riverTiles.innerHTML += `<div class="${cls}">${TILE_MAP[displayT]||displayT}</div>`;
-            });
-        } else {
-            riverWrapper.style.display = 'none';
-            document.getElementById('game-table').classList.remove('danger-mode');
-        }
+            let alertHtml = "";
+            if(sc.isRiichi) alertHtml += `<span style="color:var(--danger)">■ リーチを受けています</span>`;
+            if(sc.oppCalls > 0) alertHtml += `<span style="color:var(--push); margin-left:10px;">■ 副露:${sc.oppCalls}</span>`;
+            document.getElementById('ctx-alert').innerHTML = alertHtml;
 
-        const handDiv = document.getElementById('my-hand');
-        handDiv.innerHTML='';
-        const order = {'man':0,'pin':1,'sou':2,'ji':3};
-        let displayHand = [...sc.hand];
-        displayHand.sort((a,b)=>{
-             const typeA=getType(a), typeB=getType(b);
-             if(order[typeA]!==order[typeB]) return order[typeA]-order[typeB];
-             return getNum(a)-getNum(b);
-        });
-        
-        displayHand.forEach(t => handDiv.appendChild(createTile(t)));
-        const tsumoEl = createTile(sc.tsumo);
-        tsumoEl.classList.add('tsumo');
-        handDiv.appendChild(tsumoEl);
+            document.getElementById('ctx-dora').innerHTML = tileHtml(sc.dora);
+            
+            const riverWrapper = document.getElementById('river-wrapper');
+            const riverTiles = document.getElementById('river-tiles');
+            const stickContainer = document.getElementById('riichi-stick-container');
+            
+            riverTiles.innerHTML = '';
+            stickContainer.innerHTML = ''; 
+
+            if(sc.isRiichi) {
+                riverWrapper.style.display = 'block';
+                stickContainer.innerHTML = `<div class="riichi-stick"><div class="riichi-dot"></div></div>`;
+                document.getElementById('game-table').classList.add('danger-mode');
+                
+                if(sc.river && Array.isArray(sc.river)) {
+                    sc.river.forEach(obj => {
+                        if(!obj || !obj.t) return;
+                        const isRed = obj.t.includes('r');
+                        const displayT = obj.t.replace('r','');
+                        const cls = `small-tile ${getType(obj.t)}` + (isRed?' red':'') + (obj.g?' tsumogiri':'');
+                        riverTiles.innerHTML += `<div class="${cls}">${TILE_MAP[displayT]||displayT}</div>`;
+                    });
+                }
+            } else {
+                riverWrapper.style.display = 'none';
+                document.getElementById('game-table').classList.remove('danger-mode');
+            }
+
+            const handDiv = document.getElementById('my-hand');
+            handDiv.innerHTML='';
+            const order = {'man':0,'pin':1,'sou':2,'ji':3};
+            let displayHand = [...sc.hand];
+            displayHand.sort((a,b)=>{
+                 const typeA=getType(a), typeB=getType(b);
+                 if(order[typeA]!==order[typeB]) return order[typeA]-order[typeB];
+                 return getNum(a)-getNum(b);
+            });
+            
+            displayHand.forEach(t => handDiv.appendChild(createTile(t)));
+            const tsumoEl = createTile(sc.tsumo);
+            tsumoEl.classList.add('tsumo');
+            handDiv.appendChild(tsumoEl);
+        } catch(e) {
+            console.error(e);
+            document.getElementById('debug-log').innerText = "Render Error: " + e.message;
+        }
     }
 
     function createTile(t) {
@@ -636,7 +650,9 @@
             saveData();
             showModal(true, user, best);
         } else {
-            historyData.unshift({ scenario: currentScenario, user: user, best: best });
+            // 履歴保存時に河データを安全な形式で保存
+            const safeScenario = JSON.parse(JSON.stringify(currentScenario)); 
+            historyData.unshift({ scenario: safeScenario, user: user, best: best });
             if(historyData.length > 20) historyData.pop();
             currentStreak = 0;
             saveData();
@@ -709,10 +725,15 @@
     function nextProblem() {
         document.getElementById('modal').style.display='none';
         document.getElementById('game-table').classList.remove('danger-mode');
-        const sc = generateScenario();
-        currentScenario = sc;
-        currentAnalysis = analyze(sc);
-        renderScene(sc);
+        try {
+            const sc = generateScenario();
+            currentScenario = sc;
+            currentAnalysis = analyze(sc);
+            renderScene(sc);
+        } catch(e) {
+            console.error("Game Init Error:", e);
+            document.getElementById('debug-log').innerText = "Error: " + e.message;
+        }
     }
     function renderReview() {
         const list = document.getElementById('review-list');
@@ -725,6 +746,7 @@
             const div = document.createElement('div');
             div.className = 'review-item';
             let handHtml = '';
+            // 古いデータ形式(文字列配列の河)が混ざっても壊れないようにチェック
             const h = [...d.scenario.hand, d.scenario.tsumo].sort(); 
             h.forEach(t => handHtml += `<div class="tile ${getType(t)} ${t.includes('r')?'red':''}">${TILE_MAP[t.replace('r','')]||t}</div>`);
             div.innerHTML = `
