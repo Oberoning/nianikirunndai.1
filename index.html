@@ -272,6 +272,22 @@
         }
         .menu-btn:active { transform: scale(0.96); }
         
+        /* アップデート通知エリア */
+        .version-area {
+            margin-top: 30px; text-align: center;
+            background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05); width: 85%; max-width: 340px;
+        }
+        .update-btn {
+            background: none; border: 1px solid rgba(255,255,255,0.3); color: #ccc;
+            padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+            margin-top: 8px; transition: 0.2s;
+        }
+        .update-btn:active { background: rgba(255,255,255,0.1); }
+        .version-status { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+        .status-new { color: var(--safe); }
+        .status-old { color: var(--danger); }
+        
         /* 復習 */
         #screen-review { background: #000; overflow-y: auto; padding: 20px 10px; padding-bottom: max(30px, env(safe-area-inset-bottom)); }
         .review-item { background: #252525; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #333; }
@@ -297,6 +313,12 @@
 
         <button class="menu-btn" onclick="startGame()">修行開始</button>
         <button class="menu-btn" style="background:linear-gradient(135deg, #444, #333); color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.3);" onclick="showReview()">間違えた問題</button>
+
+        <div class="version-area">
+            <div id="version-display" class="version-status" style="color:#888;">Ver 1.2</div>
+            <div id="update-msg" style="font-size:0.75rem; color:#aaa;"></div>
+            <button class="update-btn" onclick="checkAndUpdate()">🔄 更新を確認 (リロード)</button>
+        </div>
     </div>
 
     <div id="screen-game" style="display:none; flex-direction:column; height:100%;">
@@ -355,6 +377,37 @@
     </div>
 
 <script>
+    // --- バージョン管理システム ---
+    const CURRENT_VERSION = "1.2";
+    
+    function initVersionCheck() {
+        const savedVer = localStorage.getItem('mahjong_app_version');
+        const disp = document.getElementById('version-display');
+        const msg = document.getElementById('update-msg');
+        
+        if (!savedVer) {
+            // 初回
+            localStorage.setItem('mahjong_app_version', CURRENT_VERSION);
+            disp.innerHTML = `Ver ${CURRENT_VERSION}`;
+            msg.innerHTML = "インストール完了";
+        } else if (savedVer !== CURRENT_VERSION) {
+            // バージョンアップ検知
+            localStorage.setItem('mahjong_app_version', CURRENT_VERSION);
+            disp.innerHTML = `Ver ${CURRENT_VERSION} <span class="status-new">(NEW)</span>`;
+            disp.style.color = "var(--safe)";
+            msg.innerHTML = `アップデート完了！<br>(${savedVer} → ${CURRENT_VERSION})`;
+        } else {
+            // 最新
+            disp.innerHTML = `Ver ${CURRENT_VERSION} <span style="font-size:0.7em; color:#888;">(LATEST)</span>`;
+            msg.innerHTML = "最新バージョンを利用中";
+        }
+    }
+
+    function checkAndUpdate() {
+        // キャッシュを無視してリロード
+        window.location.reload(true);
+    }
+
     // --- データ定義 ---
     const TILE_MAP = {'1m':'🀇','2m':'🀈','3m':'🀉','4m':'🀊','5m':'🀋','6m':'🀌','7m':'🀍','8m':'🀎','9m':'🀏','1s':'🀐','2s':'🀑','3s':'🀒','4s':'🀓','5s':'🀔','6s':'🀕','7s':'🀖','8s':'🀗','9s':'🀘','1p':'🀙','2p':'🀚','3p':'🀛','4p':'🀜','5p':'🀝','6p':'🀞','7p':'🀟','8p':'🀠','9p':'🀡','1z':'🀀','2z':'🀁','3z':'🀂','4z':'🀃','5z':'🀆','6z':'🀅','7z':'🀄'};
     function getType(t){ return t.includes('m')?'man':t.includes('s')?'sou':t.includes('p')?'pin':'ji'; }
@@ -530,22 +583,18 @@
         let results = fullHand.map(tile => {
             const eff = getConnectors(tile, fullHand);
             const safe = {level:0, reason:"無筋"};
-            // 安全度詳細
             if(river.includes(tile)) { safe.level=100; safe.reason="現物"; }
             else if(getType(tile)==='ji') { safe.level=30; safe.reason="字牌"; }
             else if(getNum(tile)===1 || getNum(tile)===9) { safe.level=20; safe.reason="端牌"; }
 
-            // 評価
             const eval = evaluateHand(scenario, tile);
             
-            // effスコア加算
             if(scenario.isRiichi) {
                 if(scenario.myValue >= 3) eval.score += eff.score;
             } else {
                 eval.score += eff.score * 10;
             }
 
-            // ★修正: 表示用スコアを内部スコアと一致させる (同点バグ回避)
             const finalScore = Math.round(eval.score);
 
             return { tile, score: finalScore, eff, safe: safe, reasons: eval.reasons, effScore: finalScore };
@@ -567,7 +616,6 @@
         const dora = deck[Math.floor(Math.random()*deck.length)];
         let myValue = Math.floor(Math.random()*4); 
         
-        // ランダムな残りツモ数 (4〜17)
         const remain = Math.floor(Math.random() * 14) + 4;
 
         let hand = ['1p','2p','3p','4s','5s','6s','8s','8s','8s','6s','6s','2m','3m','5z'];
@@ -607,6 +655,9 @@
         document.getElementById('screen-game').style.display='none';
         document.getElementById('screen-review').style.display='none';
         document.getElementById('home-best-streak').innerText = bestStreak;
+        
+        // ホームに戻ったらバージョンチェック再実行（表示更新のため）
+        initVersionCheck();
     }
 
     function showReview() {
@@ -618,7 +669,6 @@
 
     function nextProblem() {
         document.getElementById('modal').style.display='none';
-        // document.getElementById('alert-msg').style.display='none'; (削除済)
         document.getElementById('game-table').classList.remove('danger-mode');
         
         const sc = generateScenario();
@@ -645,7 +695,6 @@
         if(sc.isRiichi) {
             riverWrapper.style.display = 'block';
             stickContainer.innerHTML = `<div class="riichi-stick"><div class="riichi-dot"></div></div>`;
-            // アラートメッセージ表示は削除済、枠の赤色は維持
             document.getElementById('game-table').classList.add('danger-mode');
             
             sc.river.forEach(t => {
@@ -683,7 +732,6 @@
     function checkAnswer(tile) {
         const best = currentAnalysis[0];
         const user = currentAnalysis.find(r => r.tile === tile);
-        // ★修正: 点数が同じなら必ず正解とする (5点差ロジックも残すが、同点優遇)
         const isCorrect = (user.score === best.score) || (user.score >= best.score - 5); 
         
         if(isCorrect) {
@@ -779,7 +827,9 @@
         });
     }
 
+    // 初期化
     document.getElementById('home-best-streak').innerText = bestStreak;
+    initVersionCheck();
 </script>
 </body>
 </html>
